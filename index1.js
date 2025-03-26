@@ -13,9 +13,10 @@ app.get('/',function(req,res){
     let n=req.query.n;
     let ans=calculatesum(n);
     res.send(ans);
+    console.log(ans);
 })
 
-//app.listen(3000);
+app.listen(3000);
 
 // // import express module using require function and store it in express variable
 // const express = require('express');
