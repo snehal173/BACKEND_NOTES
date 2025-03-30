@@ -8,10 +8,43 @@ const JWT_SECRET = "ilove100xdevsliveclasses";
 
 app.use(express.json());
 
-app.post('/signup',function(req,res){
+function logger(req,res,next){
+    console.log(`${req.method} request received`);
+    next();
+}
+//serve the index.html file when accessig the root route
+app.get("/",(req,res)=>{
+    res.sendFile(__dirname+"/public/index.html");
+})
+
+function authmiddleware(req,res,next){
+   const token=req.headers.token;
+   if(!token){
+     return res.json({
+        message:"token is missing"
+     })
+   }
+   try{
+    const decodedata=jwt.verify(token,JWT_SECRET);
+    console.log(decodedata);
+    req.username=decodedata.username;
+    next();
+   }catch(error){
+    return res.json({
+        message:" invalid token"
+    })
+   }
+  
+}
+
+app.post('/signup',logger,function(req,res){
     const username=req.body.username;
     const password=req.body.password;
-
+    if(username.length<5){
+        return res.json({
+            message:"username is invalid",
+        })
+    }
     const founduser=users.find(u=>u.username===username)
 
     if(founduser){
@@ -20,11 +53,7 @@ app.post('/signup',function(req,res){
         })
     }
 
-    if(username.length<5){
-        return res.json({
-            message:"username is invalid",
-        })
-    }
+   
     users.push({
         username:username,
         password:password
@@ -39,7 +68,7 @@ app.post('/signup',function(req,res){
 
 });
 
-app.post("/signin",function(req,res){
+app.post("/signin",logger,function(req,res){
     const username=req.body.username;
     const password=req.body.password;
 
@@ -64,17 +93,10 @@ app.post("/signin",function(req,res){
 
 })
 
-app.get("/me",function(req,res){
-    const token=req.headers.token;
-
-    if(!token){
-        return res.json({
-            message:"token is missing",
-        })
-    }
-    const userdetails=jwt.verify(token,JWT_SECRET);
-
-    const founduser=users.find(u=>u.username===userdetails.username);
+app.get("/me",authmiddleware,function(req,res){
+    
+    //middleware se aaya req.username
+    const founduser=users.find(u=>u.username===req.username);
 
     if(!founduser){
         return res.json({
